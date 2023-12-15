@@ -1,181 +1,108 @@
-// import Notiflix from 'notiflix';
-// import SimpleLightbox from "simplelightbox";
-// import "simplelightbox/dist/simple-lightbox.min.css";
-// import { createMarkup } from './markup.js';
-// import { fetchImages } from "./img-api.js";
-
-// export const refs = {
-//   search: document.querySelector('.search-form'),
-//   gallery: document.querySelector('.gallery'),
-//   loadBtn: document.querySelector('.load-more'),
-// };
-
-
-// let page = 1;
-// const perPage = 40;
-// const searchQuery = '';
-// refs.loadBtn.style.display = 'none';
-
-// refs.search.addEventListener('submit', function (event) {
-//   event.preventDefault();
-//   page = 1;
-//   refs.gallery.innerHTML = '';
-//   searchQuery = event.currentTarget.elements.searchQuery.value.trim();
-
-//   if (searchQuery === '') {
-//     Notiflix.Notify.warning('Please enter a search query');
-//     return;
-//   }
-//    try {
-//     const data = fetchImages(searchQuery, page, perPage);
-//     handleSearchResults(data);
-//   } catch (error) {
-//     console.error('Error searching images:', error);
-//     Notiflix.Notify.failure('Oops! Something went wrong. Please, try again.');
-//   }
-
-//   // handleImagesResult();
-// });
-
-// fetchImages(searchQuery, page, perPage)
-//   .then(data => {
-//     const searchResults = data.hits;
-//     if (data.totalHits === 0) {
-//       refs.gallery.innerHTML = '';
-//       Notiflix.Notify.warning('Sorry, there are no images matching your search query. Please try again.');
-//     }
-
-//     if (page === 1) {
-//       refs.gallery.innerHTML = '';
-//       Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images`);
-      
-//       createMarkup(searchResults);
-
-//       const lightbox = new SimpleLightbox('.gallery a', {
-//       captionsData: 'alt',
-//       captionDelay: 250,
-//       captionPosition: 'bottom',
-//     });
-//     }
-
-//     if (data.totalHits > perPage) {
-//       refs.loadBtn.style.display = 'block';
-//     } else {
-//       refs.loadBtn.style.display = 'none';
-//       Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-//     }
-    
-//   });
-
-
-
-// refs.loadBtn.addEventListener('click', async function () {
-//   page++;
-//   // try {
-//   //   const { hits, totalHits } = await fetchImages(searchQuery, page);
-//   //   handleImagesResult(hits, totalHits);
-//   // } catch (error) {
-//   //   console.error('Error:', error);
-//   //   Notiflix.Notify.failure('Error fetching more images. Please try again later.');
-//   // }
-//    try {
-//     const result = await fetchImages(searchQuery, page, perPage);
-//     const searchResults = result.hits;
-//     const numberOfLastPage = Math.ceil(result.totalHits / perPage);
-//     createMarkup(searchResults);
-
-//     if (page === numberOfLastPage) {
-//       refs.loadBtn.style.display = 'none';
-//       Notiflix.Notify.info('We`re soory, but you`ve reached the end of search results.');
-//       refs.loadBtn.removeEventListener();
-//     }
-//   } catch (error) {
-//      Notiflix.Notify.failure('Oops! Something went wrong. Please, try again.');
-//    }
-// });
-
-
 import Notiflix from 'notiflix';
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 import { createMarkup } from './markup.js';
-import { fetchImages } from "./img-api.js";
+import { NewsApiServer } from './img-api.js';
 
-export const refs = {
-  search: document.querySelector('.search-form'),
-  gallery: document.querySelector('.gallery'),
-  loadBtn: document.querySelector('.load-more'),
-};
+const search = document.querySelector('.search-form');
+const gallery = document.querySelector('.gallery');
+const loadBtn = document.querySelector('.load-more');
 
-let page = 1;
-const perPage = 40;
-let searchQuery = '';
-refs.loadBtn.style.display = 'none';
 
-refs.search.addEventListener('submit', async function (event) {
-  event.preventDefault();
-  page = 1;
-  refs.gallery.innerHTML = '';
-  searchQuery = event.currentTarget.elements.searchQuery.value.trim();
+search.addEventListener('submit', onSubmit);
+loadBtn.addEventListener('click', onLoad);
 
-  if (searchQuery === '') {
-    Notiflix.Notify.warning('Please enter a search query');
-    return;
-  }
 
-  try {
-    const data = await fetchImages(searchQuery, page, perPage);
-    handleSearchResults(data);
-  } catch (error) {
-    console.error('Error searching images:', error);
-    Notiflix.Notify.failure('Oops! Something went wrong. Please, try again.');
-  }
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+  captionPosition: 'bottom',
 });
 
-refs.loadBtn.addEventListener('click', async function () {
-  page++;
-  try {
-    const result = await fetchImages(searchQuery, page, perPage);
-    handleLoadMoreResults(result);
-  } catch (error) {
-    console.error('Error loading more images:', error);
-    Notiflix.Notify.failure('Oops! Something went wrong. Please, try again.');
+
+const newsApiServer = new NewsApiServer();
+loadBtn.style.display = 'none';
+
+
+function onSubmit(evt) {
+  evt.preventDefault();
+  window.scrollTo(0, 0);
+  clearPage();
+
+  loadBtn.style.display = 'none';
+
+  newsApiServer.searchQuery = evt.currentTarget.elements.searchQuery.value
+    .trim()
+    .toLowerCase()
+    .split(' ')
+    .join('+');
+  // console.log(newsApiServer.searchQuery);
+
+  if (newsApiServer.searchQuery === '') {
+    return Notiflix.Notify.info("Please fill in the search field.");
   }
-});
 
-function handleSearchResults(data) {
-  const searchResults = data.hits;
-  if (data.totalHits === 0) {
-    Notiflix.Notify.warning('Sorry, there are no images matching your search query. Please try again.');
-  }
-
-  if (page === 1) {
-    Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images`);
-    createMarkup(searchResults);
-
-    const lightbox = new SimpleLightbox('.gallery a', {
-      captionsData: 'alt',
-      captionDelay: 250,
-      captionPosition: 'bottom',
-    });
-
-    if (data.totalHits > perPage) {
-      refs.loadBtn.style.display = 'block';
-    } else {
-      refs.loadBtn.style.display = 'none';
-      Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-    }
-  }
+  fetchPhoto();
 }
 
-// function handleLoadMoreResults(result) {
-//   const searchResults = result.hits;
-//   const numberOfLastPage = Math.ceil(result.totalHits / perPage);
-//   createMarkup(searchResults);
 
-//   if (page === numberOfLastPage) {
-//     refs.loadBtn.style.display = 'none';
-//     Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-//     refs.loadBtn.removeEventListener();
-//   }
-// }
+function fetchPhoto() {
+  clearPage();
+
+  newsApiServer
+    .fetchImages()
+    .then(data => {
+      if (data.totalHits === 0) {
+        clearPage();
+        return Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
+      } else {
+        Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+        
+        newsApiServer.totalImages += data.hits.length;
+        appendPhotoMarkup(data);
+        lightbox.refresh();
+
+        if (data.totalHits <= newsApiServer.totalImages) {
+          Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
+          totalImages = 0;
+          return;
+        }
+
+        // console.log('data.hits', newsApiServer.totalImages);
+        loadBtn.style.display = 'block';
+      }
+    })
+    .catch(error => console.log(error.message));
+}
+
+
+function onLoad() {
+  newsApiServer
+    .fetchImages()
+    .then(data => {
+      appendPhotoMarkup(data);
+      lightbox.refresh();
+
+      newsApiServer.totalImages += data.hits.length;
+      // console.log('data.hits', newsApiServer.totalImages);
+
+      if (data.totalHits <= newsApiServer.totalImages) {
+        Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
+        totalImages = 0;
+      }
+    })
+    .catch(error => console.log(error.message));
+}
+
+
+function appendPhotoMarkup(data) {
+  gallery.insertAdjacentHTML('beforeend', createMarkup(data.hits));
+}
+
+
+function clearPage() {
+  gallery.innerHTML = '';
+  newsApiServer.page = 1;
+  newsApiServer.resetPage();
+  newsApiServer.totalImages = 0;
+}
