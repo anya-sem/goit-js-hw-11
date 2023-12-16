@@ -72,7 +72,6 @@ function fetchPhoto() {
       }
     })
     .catch(error => console.log(error.message));
-    loadBtn.addEventListener("click", onLoadClick)
 }
 
 function onLoad() {
