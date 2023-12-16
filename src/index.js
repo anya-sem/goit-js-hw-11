@@ -64,7 +64,7 @@ function fetchPhoto() {
 
         if (data.totalHits <= newsApiServer.totalImages) {
           Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-          totalImages = 0;
+          newsApiServer.totalImages = 0;
           return;
         }
 
@@ -73,8 +73,8 @@ function fetchPhoto() {
       }
     })
     .catch(error => console.log(error.message));
+    loadBtn.addEventListener("click", onLoadClick)
 }
-
 
 function onLoad() {
   newsApiServer
@@ -88,11 +88,33 @@ function onLoad() {
 
       if (data.totalHits <= newsApiServer.totalImages) {
         Notiflix.Notify.info("We're sorry, but you've reached the end of search results.");
-        totalImages = 0;
+        newsApiServer.totalImages = 0;
       }
     })
     .catch(error => console.log(error.message));
 }
+
+async function onLoadClick() {
+  newsApiServer.page += 1;
+
+  try {
+    const fetchResult = await newsApiServer.fetchImages();
+    // console.log(fetchResult);
+    const hitsResult = fetchResult.hits
+    const numberOfLastPage = Math.ceil(fetchResult.totalHits / newsApiServer.per_page);
+    createMarkup(hitsResult);
+
+      if (newsApiServer.page === numberOfLastPage) {
+      Notiflix.Notify.info(
+        'We`re soory, but you`ve reached the end of search results.'
+        );
+        loadBtn.style.display = 'none';
+        loadBtn.removeEventListener("click", onLoadClick);
+    }
+  } catch (error) {
+      console.log(error.message);
+  }
+} 
 
 
 function appendPhotoMarkup(data) {
